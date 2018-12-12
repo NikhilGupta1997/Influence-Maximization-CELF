@@ -1,5 +1,3 @@
-// http://snap.stanford.edu/class/cs224w-readings/goyal11celf.pdf
-
 #include <iostream>
 #include <stdio.h>
 #include <fstream>
@@ -94,7 +92,7 @@ class Graph {
 	}
 
 	// Deactivate all nodes
-	void reactivate_graph() {
+	void deactivate_graph() {
 		for(int i = 0; i < nodelist.size(); i++) {
 			nodelist[i]->activated = false;
 		}
@@ -114,7 +112,7 @@ class Graph {
 		for(int i = 0; i < usize; i++) {
 			if(!adjlist[a][i]->activated && !adjlist[a][i]->visited) {
 				if(try_activation()) {
-			0		traverse(adjlist[a][i], traversed);
+					traverse(adjlist[a][i], traversed);
 				}
 			}
 		}
@@ -208,58 +206,34 @@ void add_results(int results[], vector<int> &maxval) {
 }
 
 int main() {
-	bool pagerank = false;
 	srand(time(NULL));
-	read_input("nethept.inf");
-	master_graph.weight = 0.01;
-	int k = 200;
+
+	// Initialize Graph
+	read_input("nethept.inf"); // Change input file based on dataset
+	master_graph.weight = 0.1; // Change weight to effect influence reach
+	int k = 200; // Number of seeds
 	long activated = 0;
-	int size = master_graph.nodelist.size();
-	int results[size];
-	for(int i = 0; i < size; i++) {
-		results[i] = 0;
-	}
+	int size = master_graph.nodelist.size(); // Number of nodes
+
 	vector<node*> *traversed;
 	traversed = new vector<node*>[max];
 	vector< pair<int,int> > table;
 	vector<int> maxval;
-	vector<int> pages;
-	if(pagerank) {
-		ifstream file;
-		file.open("nodes.txt");
-		int counter = 0;
-		while(counter < k) {
-			counter++;
-			int temp;
-			file >> temp;
-			cout<<temp<<endl;
-			pages.push_back(temp);
-		}
-		file.close();
-	}
-	int count = 0, limit = 100;
-	long spread = 0;
-	while(count < limit) {
+	int count = 1, limit = 100; // Run 100 iterations
+	while(count <= limit) {
 		class Graph input_graph(master_graph);
 		cout<<"iteration "<<count<<endl;
 		node* curr;
-		for(int i = 0; i < size; i++) {
+		for(int i = 0; i < size; i++) { // simulate the influence reach of each node in the graph
 			curr = input_graph.findnode(i);
 			input_graph.traverse(curr, traversed[i]);
 			input_graph.unvisit(traversed[i]);
 		}
-		create_table(traversed, table, size);
+		create_table(traversed, table, size); //  Create table storing marginal influence gains
 		for(int j = 0; j < k; j++) {
-			
 			maxval.push_back(table[0].first);
-			if(!pagerank) {
-				update_table(table, traversed, maxval[j]);
-			}
-			else {
-				update_table(table, traversed, pages[j]);
-			}
+			update_table(table, traversed, maxval[j]); // Lazy greedy update
 		}
-		add_results(results, maxval);
 		for(int i = 0; i < size; i++)
 			traversed[i].clear();
 		maxval.clear();
@@ -268,7 +242,7 @@ int main() {
 		int temp_activates = input_graph.get_activated_count();
 		activated += temp_activates;
 		cout<<"activated = "<<temp_activates<<endl;
-		input_graph.reactivate_graph();
+		input_graph.deactivate_graph();
 	}
-	cout<<"Graph Spread = "<< activated / limit<<endl;
+	cout<<"Average Graph Spread = "<< activated / limit <<endl;
 }
